@@ -32,11 +32,11 @@ const getData = async htmlPath => {
 
 const findMongo = html => {
     try {
-        const regex = /^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\w+?):(\d+)\/(\w+?)$/;
+        const regex = /mongodb:\/\/(\w+:\w+@)?[\.\w]+(:\d+)?(,[\.\w]+(:\d+)?)*(\/\w+)?/g;
         let matches = html.match(regex);
      
         if (matches) {
-            matches.forEach(console.log);
+            matches.forEach(match => console.log(match));
         }
     } catch (err) {
         console.error(err.message);
