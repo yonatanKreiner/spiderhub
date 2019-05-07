@@ -33,19 +33,21 @@ const getData = async htmlPath => {
 const findMongo = html => {
     try {
         const regex = /mongodb:\/\/(\w+:\w+@)?[\.\w]+(:\d+)?(,[\.\w]+(:\d+)?)*(\/\w+)?/g;
-        let matches = html.match(regex);
-     
-        if (matches) {
-            matches.forEach(match => console.log(match));
-        }
+        return html.match(regex);
     } catch (err) {
         console.error(err.message);
     }
 }
 
+const filterMongo = connectionStrings => {
+    const uniqueConnectionStrings = [...new Set(connectionStrings)];
+    return uniqueConnectionStrings.filter(connectionString => !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1'))
+}
+
 searchCommits('mongo connection string').then(commits => {
     commits.items.map(async commit => {
         const html = await getData(commit.html_url);
-        findMongo(html);
+        const mongos = filterMongo(findMongo(html));
+        mongos.forEach(mongo => console.log(mongo));
     })
 });
