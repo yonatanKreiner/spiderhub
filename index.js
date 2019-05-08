@@ -1,21 +1,14 @@
 const axios = require('axios');
 
+const config = require('./config');
+
 const GITHUB_URL = 'https://api.github.com/search'
 
 const searchCommits = async query => {
     try
     {
         const res = await axios.get(`${GITHUB_URL}/commits?q=${query}`, { headers: { Accept: 'application/vnd.github.cloak-preview' }});
-        return res.data;
-    } catch (err) {
-        console.error(err.message);
-    }
-}
-
-const searchCode = async query => {
-    try {
-        const res = await axios.get(`${GITHUB_URL}/code?q=${query}`, { headers: { Accept: 'application/vnd.github.cloak-preview' }});
-        return res.data;
+        return res.data.items;
     } catch (err) {
         console.error(err.message);
     }
@@ -30,24 +23,30 @@ const getData = async htmlPath => {
     }
 }
 
-const findMongo = html => {
+const findRegex = (html, regex) => {
     try {
-        const regex = /mongodb:\/\/(\w+:\w+@)?[\.\w]+(:\d+)?(,[\.\w]+(:\d+)?)*(\/\w+)?/g;
         return html.match(regex);
     } catch (err) {
         console.error(err.message);
     }
 }
 
-const filterMongo = connectionStrings => {
-    const uniqueConnectionStrings = [...new Set(connectionStrings)];
-    return uniqueConnectionStrings.filter(connectionString => !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1'))
+const searchSpider = async spider => {
+    const commits = await searchCommits(spider.query);
+    let results = await Promise.all(commits.map(async commit => {
+        const html = await getData(commit.html_url);
+        return findRegex(html, spider.regex);
+    }))
+    
+    results = results.flat().filter(result => result != null);
+
+    if (spider.filter) {
+        results = spider.filter(results);
+    }
+
+    return { [spider.name]: results };
 }
 
-searchCommits('mongo connection string').then(commits => {
-    commits.items.map(async commit => {
-        const html = await getData(commit.html_url);
-        const mongos = filterMongo(findMongo(html));
-        mongos.forEach(mongo => console.log(mongo));
-    })
+Promise.all(config.spiders.map(async spider => await searchSpider(spider))).then(results => {
+    results.forEach(result => console.log(result));
 });
