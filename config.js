@@ -1,4 +1,5 @@
 module.exports = {
+    pages: 1,
     spiders: [
         {
             name: 'mongo',
@@ -12,7 +13,7 @@ module.exports = {
         {
             name: 'password',
             query: 'removed password',
-            regex: /password\s?[=:]\s?["']\w+["']/
+            regex: /password\s?[=:]\s?["']\w+["']/g
         }
     ]
 }
